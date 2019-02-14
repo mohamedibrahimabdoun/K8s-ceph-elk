@@ -2,7 +2,12 @@
 Vagrant.configure("2") do |config|
 
    config.vm.box = "centos/7"
-    master01_disk = './master01_secondDisk.vdi'
+    master01_disk = './master01_secondDisk.vmdk'
+	master02_disk = './master02_secondDisk.vmdk'
+	master03_disk = './master03_secondDisk.vmdk'
+	
+	node01_disk = './node01_secondDisk.vmdk'
+	node02_disk = './node02_secondDisk.vmdk'
 	
     config.vm.define "master01" do |kube|
     kube.vm.hostname = "master01.myk8sdomain.com"
@@ -14,8 +19,74 @@ Vagrant.configure("2") do |config|
 	if not File.exists?(master01_disk)
       vb.customize ['createhd', '--filename', master01_disk, '--variant', 'Fixed', '--size', 5 * 1024]
     end
-	vb.customize ['storagectl', :id, '--name', 'SATA Controller', '--add', 'sata', '--portcount', 4]
-	vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', master01_disk]
+	#vb.customize ['storagectl', :id, '--name', 'SATA Controller', '--add', 'sata', '--portcount', 6]
+	vb.customize ['storageattach', :id,  '--storagectl', 'IDE', '--port', 1, '--device', 1, '--type', 'hdd', '--medium', master01_disk]
+    end  
+    kube.vm.provision "shell", inline: $script_master
+  end
+  
+  
+    config.vm.define "master02" do |kube|
+    kube.vm.hostname = "master02.myk8sdomain.com"
+    kube.vm.network "private_network", ip: "10.10.1.22"
+	kube.vm.network "private_network", ip: "192.168.1.22"
+    config.vm.provider :virtualbox do |vb|
+       vb.customize ["modifyvm", :id, "--memory", "2048"]
+       vb.customize ["modifyvm", :id, "--cpus", "1"]
+	if not File.exists?(master02_disk)
+      vb.customize ['createhd', '--filename', master02_disk, '--variant', 'Fixed', '--size', 5 * 1024]
+    end
+	#vb.customize ['storagectl', :id, '--name', 'SATA Controller2', '--add', 'sata', '--portcount', 6]
+	vb.customize ['storageattach', :id,  '--storagectl', 'IDE', '--port', 1, '--device', 1, '--type', 'hdd', '--medium', master02_disk]
+    end  
+    kube.vm.provision "shell", inline: $script_master
+  end
+  
+    config.vm.define "master03" do |kube|
+    kube.vm.hostname = "master03.myk8sdomain.com"
+    kube.vm.network "private_network", ip: "10.10.1.23"
+	kube.vm.network "private_network", ip: "192.168.1.23"
+    config.vm.provider :virtualbox do |vb|
+       vb.customize ["modifyvm", :id, "--memory", "2048"]
+       vb.customize ["modifyvm", :id, "--cpus", "1"]
+	if not File.exists?(master03_disk)
+      vb.customize ['createhd', '--filename', master03_disk, '--variant', 'Fixed', '--size', 5 * 1024]
+    end
+	#vb.customize ['storagectl', :id, '--name', 'SATA Controller3', '--add', 'sata', '--portcount', 6]
+	vb.customize ['storageattach', :id,  '--storagectl', 'IDE', '--port', 1, '--device', 1, '--type', 'hdd', '--medium', master03_disk]
+    end  
+    kube.vm.provision "shell", inline: $script_master
+  end
+ 
+    config.vm.define "node-01" do |kube|
+    kube.vm.hostname = "node-01.myk8sdomain.com"
+    kube.vm.network "private_network", ip: "10.10.1.31"
+	kube.vm.network "private_network", ip: "192.168.1.31"
+    config.vm.provider :virtualbox do |vb|
+       vb.customize ["modifyvm", :id, "--memory", "2048"]
+       vb.customize ["modifyvm", :id, "--cpus", "1"]
+	if not File.exists?(node01_disk)
+      vb.customize ['createhd', '--filename', node01_disk, '--variant', 'Fixed', '--size', 5 * 1024]
+    end
+	#vb.customize ['storagectl', :id, '--name', 'SATA Controller4', '--add', 'sata', '--portcount', 6]
+	vb.customize ['storageattach', :id,  '--storagectl', 'IDE', '--port', 1, '--device',1, '--type', 'hdd', '--medium', node01_disk]
+    end  
+    kube.vm.provision "shell", inline: $script_master
+  end
+
+  
+ config.vm.define "node-02" do |kube|
+    kube.vm.hostname = "node-02.myk8sdomain.com"
+    kube.vm.network "private_network", ip: "10.10.1.32"
+	kube.vm.network "private_network", ip: "192.168.1.32"
+    config.vm.provider :virtualbox do |vb|
+       vb.customize ["modifyvm", :id, "--memory", "2048"]
+       vb.customize ["modifyvm", :id, "--cpus", "1"]
+	if not File.exists?(node02_disk)
+      vb.customize ['createhd', '--filename', node02_disk, '--variant', 'Fixed', '--size', 5 * 1024]
+    end
+	#vb.customize ['storagectl', :id, '--name', 'SATA Controller5', '--add', 'sata', '--portcount', 6]
+	vb.customize ['storageattach', :id,  '--storagectl', 'IDE', '--port', 1, '--device', 1, '--type', 'hdd', '--medium', node02_disk]
     end  
     kube.vm.provision "shell", inline: $script_master
   end
@@ -25,6 +96,7 @@ $script_master = <<SCRIPT
 echo I am provisioning...
 echo "r00tme" | sudo passwd --stdin  root
 echo "###########Setting Kubernetes Params################"
+
 sudo cp /vagrant/hosts /etc/hosts
 sudo cp /vagrant/kubernetes.repo /etc/yum.repos.d/kubernetes.repo
 sudo cp /vagrant/centos.repo /etc/yum.repos.d/centos.repo
@@ -39,6 +111,10 @@ sudo systemctl enable docker
 sudo systemctl start docker
 sudo systemctl start kubelet
 sudo systemctl enable kubelet
+
+sudo useradd k8s
+echo "k8s123" | sudo passwd --stdin k8s
+
 echo "###########Setting Elastic Search Parameters###############"
 sudo su -
 yum install -y vim net-tools java-1.8.0-openjdk
