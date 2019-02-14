@@ -1,0 +1,11 @@
+
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+10.10.1.21   master01 master01.myk8sdomain.com
+10.10.1.22   master02 master02.myk8sdomain.com
+10.10.1.23   master03 master03.myk8sdomain.com
+10.10.1.31   node-01  node-01.myk8sdomain.com
+10.10.1.32   node-02  node-02.myk8sdomain.com
+10.10.1.33   node-03  node-03.myk8sdomain.com
+10.10.1.120  lb  lb.myk8sdomain.com
